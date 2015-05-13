@@ -339,7 +339,6 @@
             // 
             // grpChange
             // 
-            this.grpChange.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.grpChange.Controls.Add(this.lblChangeEPGID);
             this.grpChange.Controls.Add(this.txtChangeIDEPG);
             this.grpChange.Controls.Add(this.CBTVRadio);
@@ -362,10 +361,11 @@
             this.grpChange.Controls.Add(this.txtChangeGroup);
             this.grpChange.Controls.Add(this.txtChangeNameEPG);
             this.grpChange.Controls.Add(this.txtChangeName);
+            this.grpChange.Dock = System.Windows.Forms.DockStyle.Right;
             this.grpChange.Enabled = false;
-            this.grpChange.Location = new System.Drawing.Point(606, 27);
+            this.grpChange.Location = new System.Drawing.Point(606, 24);
             this.grpChange.Name = "grpChange";
-            this.grpChange.Size = new System.Drawing.Size(327, 390);
+            this.grpChange.Size = new System.Drawing.Size(327, 516);
             this.grpChange.TabIndex = 5;
             this.grpChange.TabStop = false;
             // 
