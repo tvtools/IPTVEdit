@@ -15,7 +15,7 @@ namespace IPTVEdit
 {
     public partial class Form1 : Form
     {
-        string VersionNr = "1.15.5.13";
+        string VersionNr = "1.15.5.17";
         bool changed = false; // Für die Nachfrage beim Programm Schließen oder neu laden
         string lang = "", Info = "", DGNumber = "", DGName = "", DGEPGName = "", DGEPGShift = "", DGGroup = "", SaveError = "", SaveError2 = "", SaveSuccess = "", SafeWarning = "", SafeQuestionEPG = "", SafeQuestionLogo = "", MessageDuplicates = "";
         // Variablen fuer Logo
@@ -396,7 +396,7 @@ namespace IPTVEdit
                 System.IO.StreamReader file = new System.IO.StreamReader(openFileDialog1.FileName);//StreamReader für Datei initialisieren
                                                                                                    // alle Zeile in Schleife ausgeben und weiter auseinander nehmen
                 string Unsplitted = file.ReadToEnd();
-
+                file.Close();
                 OpenM3U(Unsplitted);
 
                 DGChannel.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
@@ -470,7 +470,6 @@ namespace IPTVEdit
         {
             OFDBlacklist.Title = "Open Text File";
             OFDBlacklist.Filter = "TXT files|*.txt";
-            OFDBlacklist.InitialDirectory = @"C:\";
             OFDBlacklist.RestoreDirectory = true;
             if (OFDBlacklist.ShowDialog() == DialogResult.OK)
             {
@@ -483,14 +482,13 @@ namespace IPTVEdit
                         string[] NeuSender = fileReader.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
                         fileReader.Close();
                         DataGridViewRow[] rows = new DataGridViewRow[this.DGChannel.Rows.Count];// Gleichgroßes Array erstellen
-                                                                                                //    Array.Reverse(NeuerSender);
                         for (int j = 0; j < DGChannel.Rows.Count; j++)
                         {
                             string Tester = Convert.ToString(DGChannel.Rows[j].Cells[1].Value);
                             //   for (int z = ende; z != 0; z--)
                             for (int z = 1; z <= NeuSender.Count(); z++)
                             {
-                                if (Tester == NeuSender[z - 1].ToString() + "\r")
+                              if (Tester == NeuSender[z - 1].ToString())
                                 {
                                     DGChannel.Rows.Remove(DGChannel.Rows[j]);
                                     j = z - 1;
@@ -500,7 +498,7 @@ namespace IPTVEdit
                         }
                         BackgroundChange(); SortbyNewIndex(); FavouriteHelp();
                     }
-                    catch { MessageBox.Show("La lista é diffettosa", "Errore", MessageBoxButtons.OK); }
+                    catch { MessageBox.Show("Error", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error); }
                 }
             }
         }
@@ -726,6 +724,7 @@ namespace IPTVEdit
             {
                 System.IO.StreamReader file = new System.IO.StreamReader(OFDSort.FileName);//StreamReader für Datei initialisieren
                 string Unsplitted = file.ReadToEnd();
+                file.Close();
                 string[] Kanal = Unsplitted.Split(new string[] { "#EXTINF" }, StringSplitOptions.None); //Die ganze Liste splitten
                 string[] NeuSender = new string[Kanal.Length];
                 string[] NeuGruppe = new string[Kanal.Length];
