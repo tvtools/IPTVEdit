@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.TSMFile = new System.Windows.Forms.ToolStripMenuItem();
             this.TSMNew = new System.Windows.Forms.ToolStripMenuItem();
@@ -55,6 +56,7 @@
             this.TSMEng = new System.Windows.Forms.ToolStripMenuItem();
             this.TSMIta = new System.Windows.Forms.ToolStripMenuItem();
             this.TSMGer = new System.Windows.Forms.ToolStripMenuItem();
+            this.TSMCheckUpdate = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.OFDSort = new System.Windows.Forms.OpenFileDialog();
@@ -64,6 +66,8 @@
             this.FBDLogo = new System.Windows.Forms.FolderBrowserDialog();
             this.DGChannel = new System.Windows.Forms.DataGridView();
             this.grpChange = new System.Windows.Forms.GroupBox();
+            this.btnFavourite = new System.Windows.Forms.Button();
+            this.CBChangeGroup = new System.Windows.Forms.ComboBox();
             this.lblChangeEPGID = new System.Windows.Forms.Label();
             this.txtChangeIDEPG = new System.Windows.Forms.TextBox();
             this.CBTVRadio = new System.Windows.Forms.ComboBox();
@@ -83,7 +87,6 @@
             this.lblChangeName = new System.Windows.Forms.Label();
             this.txtChangeLogo = new System.Windows.Forms.TextBox();
             this.txtChangeIP = new System.Windows.Forms.TextBox();
-            this.txtChangeGroup = new System.Windows.Forms.TextBox();
             this.txtChangeNameEPG = new System.Windows.Forms.TextBox();
             this.txtChangeName = new System.Windows.Forms.TextBox();
             this.PbLoad = new System.Windows.Forms.ProgressBar();
@@ -268,7 +271,8 @@
             // 
             this.TSMOthers.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.TSMInfo,
-            this.TSMLanguage});
+            this.TSMLanguage,
+            this.TSMCheckUpdate});
             this.TSMOthers.Name = "TSMOthers";
             this.TSMOthers.Size = new System.Drawing.Size(69, 20);
             this.TSMOthers.Text = "Sonstiges";
@@ -276,7 +280,7 @@
             // TSMInfo
             // 
             this.TSMInfo.Name = "TSMInfo";
-            this.TSMInfo.Size = new System.Drawing.Size(156, 22);
+            this.TSMInfo.Size = new System.Drawing.Size(186, 22);
             this.TSMInfo.Text = "Info";
             this.TSMInfo.Click += new System.EventHandler(this.TSMInfo_Click);
             // 
@@ -287,7 +291,7 @@
             this.TSMIta,
             this.TSMGer});
             this.TSMLanguage.Name = "TSMLanguage";
-            this.TSMLanguage.Size = new System.Drawing.Size(156, 22);
+            this.TSMLanguage.Size = new System.Drawing.Size(186, 22);
             this.TSMLanguage.Text = "Sprache ändern";
             // 
             // TSMEng
@@ -310,6 +314,13 @@
             this.TSMGer.Size = new System.Drawing.Size(127, 22);
             this.TSMGer.Text = "Deutsch";
             this.TSMGer.Click += new System.EventHandler(this.TSMGer_Click);
+            // 
+            // TSMCheckUpdate
+            // 
+            this.TSMCheckUpdate.Name = "TSMCheckUpdate";
+            this.TSMCheckUpdate.Size = new System.Drawing.Size(186, 22);
+            this.TSMCheckUpdate.Text = "Nach Updates prüfen";
+            this.TSMCheckUpdate.Click += new System.EventHandler(this.TSMCheckUpdate_Click);
             // 
             // statusStrip1
             // 
@@ -335,10 +346,13 @@
             this.DGChannel.TabIndex = 2;
             this.DGChannel.CellMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.DGChannel_CellMouseClick);
             this.DGChannel.ColumnAdded += new System.Windows.Forms.DataGridViewColumnEventHandler(this.DGChannel_ColumnAdded);
+            this.DGChannel.SelectionChanged += new System.EventHandler(this.DGChannel_SelectionChanged);
             this.DGChannel.KeyUp += new System.Windows.Forms.KeyEventHandler(this.DGChannel_KeyUp);
             // 
             // grpChange
             // 
+            this.grpChange.Controls.Add(this.btnFavourite);
+            this.grpChange.Controls.Add(this.CBChangeGroup);
             this.grpChange.Controls.Add(this.lblChangeEPGID);
             this.grpChange.Controls.Add(this.txtChangeIDEPG);
             this.grpChange.Controls.Add(this.CBTVRadio);
@@ -358,7 +372,6 @@
             this.grpChange.Controls.Add(this.lblChangeName);
             this.grpChange.Controls.Add(this.txtChangeLogo);
             this.grpChange.Controls.Add(this.txtChangeIP);
-            this.grpChange.Controls.Add(this.txtChangeGroup);
             this.grpChange.Controls.Add(this.txtChangeNameEPG);
             this.grpChange.Controls.Add(this.txtChangeName);
             this.grpChange.Dock = System.Windows.Forms.DockStyle.Right;
@@ -368,6 +381,25 @@
             this.grpChange.Size = new System.Drawing.Size(327, 516);
             this.grpChange.TabIndex = 5;
             this.grpChange.TabStop = false;
+            // 
+            // btnFavourite
+            // 
+            this.btnFavourite.Location = new System.Drawing.Point(6, 410);
+            this.btnFavourite.Name = "btnFavourite";
+            this.btnFavourite.Size = new System.Drawing.Size(133, 34);
+            this.btnFavourite.TabIndex = 18;
+            this.btnFavourite.Text = "Favoriten bearbeiten";
+            this.btnFavourite.UseVisualStyleBackColor = true;
+            this.btnFavourite.Click += new System.EventHandler(this.btnFavourite_Click);
+            // 
+            // CBChangeGroup
+            // 
+            this.CBChangeGroup.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.CBChangeGroup.FormattingEnabled = true;
+            this.CBChangeGroup.Location = new System.Drawing.Point(6, 148);
+            this.CBChangeGroup.Name = "CBChangeGroup";
+            this.CBChangeGroup.Size = new System.Drawing.Size(173, 21);
+            this.CBChangeGroup.TabIndex = 17;
             // 
             // lblChangeEPGID
             // 
@@ -385,6 +417,7 @@
             this.txtChangeIDEPG.Size = new System.Drawing.Size(210, 20);
             this.txtChangeIDEPG.TabIndex = 15;
             this.txtChangeIDEPG.TextChanged += new System.EventHandler(this.txtChangeIDEPG_TextChanged);
+            this.txtChangeIDEPG.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtChangeIDEPG_KeyPress);
             // 
             // CBTVRadio
             // 
@@ -414,6 +447,7 @@
             this.txtChangeEPGShift.Name = "txtChangeEPGShift";
             this.txtChangeEPGShift.Size = new System.Drawing.Size(55, 20);
             this.txtChangeEPGShift.TabIndex = 2;
+            this.txtChangeEPGShift.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtChangeEPGShift_KeyPress_1);
             // 
             // btnAddChannel
             // 
@@ -540,6 +574,7 @@
             this.txtChangeLogo.Size = new System.Drawing.Size(133, 20);
             this.txtChangeLogo.TabIndex = 4;
             this.txtChangeLogo.TextChanged += new System.EventHandler(this.txtChangeLogo_TextChanged);
+            this.txtChangeLogo.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtChangeLogo_KeyPress);
             // 
             // txtChangeIP
             // 
@@ -547,14 +582,7 @@
             this.txtChangeIP.Name = "txtChangeIP";
             this.txtChangeIP.Size = new System.Drawing.Size(310, 20);
             this.txtChangeIP.TabIndex = 5;
-            // 
-            // txtChangeGroup
-            // 
-            this.txtChangeGroup.Location = new System.Drawing.Point(6, 149);
-            this.txtChangeGroup.Name = "txtChangeGroup";
-            this.txtChangeGroup.Size = new System.Drawing.Size(137, 20);
-            this.txtChangeGroup.TabIndex = 3;
-            this.txtChangeGroup.TextChanged += new System.EventHandler(this.txtChangeGroup_TextChanged);
+            this.txtChangeIP.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtChangeIP_KeyPress);
             // 
             // txtChangeNameEPG
             // 
@@ -563,6 +591,7 @@
             this.txtChangeNameEPG.Size = new System.Drawing.Size(210, 20);
             this.txtChangeNameEPG.TabIndex = 1;
             this.txtChangeNameEPG.TextChanged += new System.EventHandler(this.txtChangeNameEPG_TextChanged);
+            this.txtChangeNameEPG.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtChangeNameEPG_KeyPress);
             // 
             // txtChangeName
             // 
@@ -570,6 +599,7 @@
             this.txtChangeName.Name = "txtChangeName";
             this.txtChangeName.Size = new System.Drawing.Size(210, 20);
             this.txtChangeName.TabIndex = 0;
+            this.txtChangeName.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtChangeName_KeyPress);
             // 
             // PbLoad
             // 
@@ -589,6 +619,7 @@
             this.Controls.Add(this.DGChannel);
             this.Controls.Add(this.statusStrip1);
             this.Controls.Add(this.menuStrip1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.MinimumSize = new System.Drawing.Size(580, 430);
             this.Name = "Form1";
@@ -661,10 +692,12 @@
         private System.Windows.Forms.Label lblChangeName;
         private System.Windows.Forms.TextBox txtChangeLogo;
         private System.Windows.Forms.TextBox txtChangeIP;
-        private System.Windows.Forms.TextBox txtChangeGroup;
         private System.Windows.Forms.TextBox txtChangeNameEPG;
         private System.Windows.Forms.TextBox txtChangeName;
         private System.Windows.Forms.ProgressBar PbLoad;
+        private System.Windows.Forms.ComboBox CBChangeGroup;
+        private System.Windows.Forms.Button btnFavourite;
+        private System.Windows.Forms.ToolStripMenuItem TSMCheckUpdate;
     }
 }
 

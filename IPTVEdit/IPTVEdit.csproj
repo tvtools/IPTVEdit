@@ -75,6 +75,12 @@
     <Compile Include="FormDuplicate.Designer.cs">
       <DependentUpon>FormDuplicate.cs</DependentUpon>
     </Compile>
+    <Compile Include="FormFavourite.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FormFavourite.Designer.cs">
+      <DependentUpon>FormFavourite.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Blacklist.resx">
@@ -88,6 +94,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FormDuplicate.resx">
       <DependentUpon>FormDuplicate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FormFavourite.resx">
+      <DependentUpon>FormFavourite.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

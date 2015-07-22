@@ -15,9 +15,9 @@ namespace IPTVEdit
 {
     public partial class Form1 : Form
     {
-        string VersionNr = "1.15.5.17";
+        string VersionNr = "1.15.7";
         bool changed = false; // Für die Nachfrage beim Programm Schließen oder neu laden
-        string lang = "", Info = "", DGNumber = "", DGName = "", DGEPGName = "", DGEPGShift = "", DGGroup = "", SaveError = "", SaveError2 = "", SaveSuccess = "", SafeWarning = "", SafeQuestionEPG = "", SafeQuestionLogo = "", MessageDuplicates = "";
+        string lang = "", Info = "", DGNumber = "", DGName = "", DGEPGName = "", DGEPGShift = "", DGGroup = "", SaveError = "", SaveError2 = "", SaveSuccess = "", SafeWarning = "", SafeQuestionEPG = "", SafeQuestionLogo = "", MessageDuplicates = "", MessageVersionOK = "", MessageVersionOld = "";
         // Variablen fuer Logo
         string LogoDownload = "";
         string LogoLoadOK = "", LogoLoadError = "";
@@ -96,6 +96,38 @@ namespace IPTVEdit
         }
         //
         //Tastatureingabe
+        private void DGChannel_SelectionChanged(object sender, EventArgs e)
+        {
+            if (DGChannel.SelectedRows.Count >= 2)
+            {
+          //      txtChangeEPGShift.Text = "";
+                txtChangeEPGShift.Enabled = false;
+            //    txtChangeIDEPG.Text = "";
+                txtChangeIDEPG.Enabled = false;
+              //  txtChangeIP.Text = "";
+                txtChangeIP.Enabled = false;
+             //   txtChangeLogo.Text = "";
+                txtChangeLogo.Enabled = false;
+              //  txtChangeName.Text = "";
+                txtChangeName.Enabled = false;
+              //  txtChangeNameEPG.Text = "";
+                txtChangeNameEPG.Enabled = false;
+              //  txtSort.Text = "";
+                txtSort.Enabled = false;
+                btnAddChannel.Enabled = false;
+            }
+            else
+            {
+                txtChangeEPGShift.Enabled = true;
+                txtChangeIDEPG.Enabled = true;
+                txtChangeIP.Enabled = true;
+                txtChangeLogo.Enabled = true;
+                txtChangeName.Enabled = true;
+                txtChangeNameEPG.Enabled = true;
+                txtSort.Enabled = true;
+                btnAddChannel.Enabled = true;
+            }
+        }
         //Selektiert die ganze Zeile
         private void DGChannel_CellMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
@@ -159,28 +191,6 @@ namespace IPTVEdit
             }
             catch { }
         }
-        //Eingabehilfe bei Favorit-Eingabe
-        private void txtChangeGroup_TextChanged(object sender, EventArgs e)
-        {
-            try
-            {
-                txtChangeGroup.AutoCompleteMode = AutoCompleteMode.Suggest;
-                txtChangeGroup.AutoCompleteSource = AutoCompleteSource.CustomSource;
-                AutoCompleteStringCollection col = new AutoCompleteStringCollection();
-                for (int i = 0; i < Favourite.Length; i++)
-                {
-                    col.Add(Favourite[i]);
-                }
-                txtChangeGroup.AutoCompleteCustomSource = col;
-            }
-            catch { }
-        }
-        //Nur Zahlen eingeben
-        private void txtChangeEPGShift_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar))
-                e.Handled = true;
-        }
         //Nur Zahlen eingeben
         private void txtSort_KeyPress(object sender, KeyPressEventArgs e)
         {
@@ -199,6 +209,47 @@ namespace IPTVEdit
                 if (Convert.ToInt32(txtSort.Text) == -1) txtSort.Text = "1";
             }
 
+        }
+        //Nur bestimmte Zeichen zulassen
+        private void txtChangeName_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            string OK = " ._-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\bÜüÖöÄä";
+            if (OK.IndexOf(e.KeyChar.ToString()) < 0) e.Handled = true;
+            else e.Handled = false;
+        }
+        //Nur bestimmte Zeichen zulassen
+        private void txtChangeIDEPG_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            string OK = " ._-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\bÜüÖöÄä";
+            if (OK.IndexOf(e.KeyChar.ToString()) < 0) e.Handled = true;
+            else e.Handled = false;
+        }
+        //Nur bestimmte Zeichen zulassen
+        private void txtChangeNameEPG_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            string OK = " ._-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\bÜüÖöÄä";
+            if (OK.IndexOf(e.KeyChar.ToString()) < 0) e.Handled = true;
+            else e.Handled = false;
+        }
+        //Nur bestimmte Zeichen zulassen
+        private void txtChangeLogo_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            string OK = " ._-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\bÜüÖöÄä";
+            if (OK.IndexOf(e.KeyChar.ToString()) < 0) e.Handled = true;
+            else e.Handled = false;
+        }
+        //Nur bestimmte Zeichen zulassen
+        private void txtChangeIP_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            string OK = " .:_-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\bÜüÖöÄä?//\\ß!§$%&()=";
+            if (OK.IndexOf(e.KeyChar.ToString()) < 0) e.Handled = true;
+            else e.Handled = false;
+        }
+        //Nur Zahlen eingeben
+        private void txtChangeEPGShift_KeyPress_1(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar))
+                e.Handled = true;
         }
         //Mauseingabe
         //Passt die Form an, wenn man an der Breite oder Höhe der Form zieht.
@@ -226,7 +277,7 @@ namespace IPTVEdit
                 if (DGChannel.Rows.Count != 0 && this.DGChannel.SelectedRows.Count == 1)
                 {
                     btnDelete.Enabled = true; btnAddClose.Enabled = true; btnAddClose.Visible = true; btnAddChannel.Enabled = true;
-                    DGChannel.Rows[selectedIndex].SetValues(selectedIndex + 1, txtChangeName.Text, txtChangeIDEPG.Text, txtChangeNameEPG.Text, txtChangeEPGShift.Text, txtChangeGroup.Text, txtChangeIP.Text, txtChangeLogo.Text, CBTVRadio.SelectedItem.ToString());
+                    DGChannel.Rows[selectedIndex].SetValues(selectedIndex + 1, txtChangeName.Text, txtChangeIDEPG.Text, txtChangeNameEPG.Text, txtChangeEPGShift.Text, CBChangeGroup.SelectedItem, txtChangeIP.Text, txtChangeLogo.Text, CBTVRadio.SelectedItem.ToString());
                     if (txtSort.Text != DGChannel[0, selectedIndex].Value.ToString())// Es darf nur eine Zeile selektiert sein
                     {
                         SortbyUser();
@@ -235,13 +286,26 @@ namespace IPTVEdit
                     DGChannel.Enabled = true; changed = true;
                 }
                 else if (DGChannel.RowCount == 0) { btnAddClose.Enabled = false; }
+                // Falls mehrere auswählt wurden
+                else if (this.DGChannel.SelectedRows.Count >= 2)
+                {
+                    int currentIndex = 0;
+                    for (int i = DGChannel.SelectedRows.Count - 1; i >= 0; i--)
+                    {
+                        currentIndex = DGChannel.SelectedRows[i].Index;
+                        DGChannel.Rows[currentIndex].SetValues(currentIndex, DGChannel.Rows[currentIndex].Cells[1].Value, DGChannel.Rows[currentIndex].Cells[2].Value, DGChannel.Rows[currentIndex].Cells[3].Value, DGChannel.Rows[currentIndex].Cells[4].Value, CBChangeGroup.SelectedItem, DGChannel.Rows[currentIndex].Cells[6].Value, DGChannel.Rows[currentIndex].Cells[7].Value, CBTVRadio.SelectedItem.ToString());
+
+                    }
+                    BackgroundChange(); SortbyNewIndex(); ChangeChannel(); FavouriteHelp();
+                }
                 DGChannel.ClearSelection();// Selektion löschen
                 DGChannel.Rows[pos - 1].Selected = true;// Das verschobene Objekt an der neuen Stelle selektieren
                 if (pos >= 5)
                 {
                     DGChannel.FirstDisplayedScrollingRowIndex = pos - 5;
                 }
-                BackgroundChange(); SortbyNewIndex(); ChangeChannel(); LogoCheck(); EPGCheck(); FavouriteHelp();
+                FavouriteHelp();
+                BackgroundChange(); SortbyNewIndex(); ChangeChannel(); LogoCheck(); EPGCheck();
             }
             catch
             {
@@ -268,7 +332,7 @@ namespace IPTVEdit
                 int pos = Convert.ToInt32(txtSort.Text);
                 if (DGChannel.Rows.Count != 0)
                 {
-                    DGChannel.Rows.Add(DGChannel.Rows.Count + 1, txtChangeName.Text, txtChangeIDEPG.Text, txtChangeNameEPG.Text, txtChangeEPGShift.Text, txtChangeGroup.Text, txtChangeIP.Text, txtChangeLogo.Text, CBTVRadio.SelectedItem.ToString());
+                    DGChannel.Rows.Add(DGChannel.Rows.Count + 1, txtChangeName.Text, txtChangeIDEPG.Text, txtChangeNameEPG.Text, txtChangeEPGShift.Text, CBChangeGroup.SelectedItem, txtChangeIP.Text, txtChangeLogo.Text, CBTVRadio.SelectedItem.ToString());
                     DGChannel.Rows[DGChannel.Rows.Count - 1].Selected = true;// Das verschobene Objekt an der neuen Stelle selektieren
                     if (txtSort.Text != Convert.ToString(DGChannel.Rows.Count + 1))
                     {
@@ -290,7 +354,7 @@ namespace IPTVEdit
                 }
                 else
                 {
-                    DGChannel.Rows.Add(DGChannel.Rows.Count + 1, txtChangeName.Text, txtChangeIDEPG.Text, txtChangeNameEPG.Text, txtChangeEPGShift.Text, txtChangeGroup.Text, txtChangeIP.Text, txtChangeLogo.Text, CBTVRadio.SelectedItem.ToString());
+                    DGChannel.Rows.Add(DGChannel.Rows.Count + 1, txtChangeName.Text, txtChangeIDEPG.Text, txtChangeNameEPG.Text, txtChangeEPGShift.Text, CBChangeGroup.SelectedItem, txtChangeIP.Text, txtChangeLogo.Text, CBTVRadio.SelectedItem.ToString());
                     grpChange.Visible = false; grpChange.Enabled = false; btnAdd.Visible = false; btnAdd.Enabled = false; btnChangeOK.Visible = false; btnChangeOK.Enabled = false;
                     btnAddChannel.Enabled = true; btnDelete.Enabled = true;
                     btnDelete.Enabled = true; btnAddChannel.Enabled = true;
@@ -349,8 +413,67 @@ namespace IPTVEdit
                 btnAddClose.Enabled = true; btnAddClose.Visible = true;
             }
             grpChange.Visible = true; grpChange.Enabled = true; btnAdd.Visible = true; btnAdd.Enabled = true; btnChangeOK.Visible = false; btnChangeOK.Enabled = false;
-            txtChangeGroup.Clear(); txtChangeIP.Clear(); txtChangeLogo.Clear(); txtChangeName.Clear(); txtChangeNameEPG.Clear(); txtChangeIDEPG.Clear(); txtChangeEPGShift.Clear();
+            try { CBChangeGroup.SelectedIndex = 0; } catch { }
+            txtChangeIP.Clear(); txtChangeLogo.Clear(); txtChangeName.Clear(); txtChangeNameEPG.Clear(); txtChangeIDEPG.Clear(); txtChangeEPGShift.Clear();
             txtSort.Text = Convert.ToString(DGChannel.Rows.Count + 1); txtChangeName.Select(); btnAddClose.Visible = true; CBTVRadio.SelectedIndex = 0;
+        }
+        // Favoritenlist bearbeiten
+        private void btnFavourite_Click(object sender, EventArgs e)
+        {
+            FormFavourite frmFav = new FormFavourite(lang, Favourite);
+            frmFav.ShowDialog();
+            if (frmFav.save == true)
+            {
+                string[] Favourite2 = frmFav.Fav;
+                // Falls Favoriten hinzugefügt wurden
+                if (Favourite != null)
+                {
+                    if (Favourite2.Length > Favourite.Length)
+                    {
+                        string[] FavHelp = new string[Favourite2.Length - Favourite.Length];
+                        for (int f = 0; f < Favourite2.Length - Favourite.Length; f++)
+                        {
+                            FavHelp[f] = Favourite2[Favourite.Length + f];
+                        }
+                        string[] Fav = Favourite;
+                        Favourite = new string[Fav.Length + FavHelp.Length];
+                        Array.Copy(Fav, Favourite, Fav.Length);
+                        Array.Copy(FavHelp, 0, Favourite, Fav.Length, FavHelp.Length);
+                    }
+                    //
+                    for (int i = 0; i < Favourite.Length; i++)
+                    {
+                        if (Favourite[i] != Favourite2[i])
+                        {
+                            //löscht Favorit aus den Datagrid-Sendern raus
+                            if (Favourite2[i] == "---||| (Deleted) |||---")
+                            {
+                                for (int j = 0; j < DGChannel.Rows.Count; j++)
+                                {
+                                    if (DGChannel[5, j].Value.ToString() == Favourite[i])
+                                    {
+                                        DGChannel[5, j].Value = "";
+                                    }
+                                }
+                                Favourite[i] = "";
+                            }
+                            // Für Namenänderungen
+                            else
+                            {
+                                for (int k = 0; k < DGChannel.Rows.Count; k++)
+                                {
+                                    if (DGChannel[5, k].Value.ToString() == Favourite[i])
+                                    {
+                                        DGChannel[5, k].Value = Favourite2[i];
+                                    }
+                                }
+                                Favourite[i] = Favourite2[i];
+                            }
+                        }
+                    }
+                }
+                FavouriteHelp();
+            }
         }
         //
         // File (Toolstripmenu)
@@ -375,11 +498,8 @@ namespace IPTVEdit
                 DGChannel.Rows.Clear(); DGChannel.Columns.Clear(); DGChannel.ColumnCount = 9; DGChannelTitel();
                 btnAddChannel.PerformClick();
             }
-            try
-            {
-                Favourite = new string[0];
-            }
-            catch { }
+
+            Favourite = null; FavouriteHelp(); Favourite = null;
         }
         private void TSMOpen_Click(object sender, EventArgs e)
         {
@@ -402,7 +522,7 @@ namespace IPTVEdit
                 DGChannel.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
                 SortbyNewIndex(); BackgroundChange();
                 if (DGChannel.RowCount != 0) this.DGChannel.Rows[0].Selected = true;
-                ChangeChannel(); LogoCheck(); EPGCheck(); FavouriteHelp();
+                LogoCheck(); EPGCheck(); Favourite = null; FavouriteHelp(); ChangeChannel();
             }
         }
         private void TSMAddCode_Click(object sender, EventArgs e)
@@ -419,7 +539,7 @@ namespace IPTVEdit
             DGChannel.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
             SortbyNewIndex(); BackgroundChange();
             if (DGChannel.RowCount != 0) this.DGChannel.Rows[0].Selected = true;
-            ChangeChannel(); LogoCheck(); EPGCheck();
+            ChangeChannel(); LogoCheck(); EPGCheck(); Favourite = null; FavouriteHelp();
         }
         private void TSMSave_Click(object sender, EventArgs e)
         {
@@ -488,7 +608,7 @@ namespace IPTVEdit
                             //   for (int z = ende; z != 0; z--)
                             for (int z = 1; z <= NeuSender.Count(); z++)
                             {
-                              if (Tester == NeuSender[z - 1].ToString())
+                                if (Tester == NeuSender[z - 1].ToString())
                                 {
                                     DGChannel.Rows.Remove(DGChannel.Rows[j]);
                                     j = z - 1;
@@ -595,7 +715,7 @@ namespace IPTVEdit
             {
                 if (FBDLogo.ShowDialog() == DialogResult.OK)
                 {
-                    LogoDir = FBDLogo.SelectedPath; 
+                    LogoDir = FBDLogo.SelectedPath;
                     LogoCheck();
                     MessageBox.Show(LogoLoadOK, "", MessageBoxButtons.OK);
                 }
@@ -841,14 +961,31 @@ namespace IPTVEdit
         {
             MessageBox.Show(Info, "Info", MessageBoxButtons.OK);
         }
+        private void TSMCheckUpdate_Click(object sender, EventArgs e)
+        {
+            WebClient webClient = new WebClient();
+            string strUpdate = webClient.DownloadString("http://tvtools.tk/download/IPTVEdit.ver");
+            if (strUpdate == VersionNr)
+            {
+                MessageBox.Show(MessageVersionOK, "Update", MessageBoxButtons.OK);
+            }
+            else
+            {
+                DialogResult result = MessageBox.Show(MessageVersionOld, "Update", MessageBoxButtons.YesNo);
+                if (result == DialogResult.Yes)
+                {
+                    System.Diagnostics.Process.Start(@"http://tvtools.tk/download/IPTVEdit.zip");
+                }
+            }
+        }
         //Others -> Language
-        private void TSMEng_Click(object sender, EventArgs e){languageENG();}
-        private void TSMIta_Click(object sender, EventArgs e){languageITA(); }
-        private void TSMGer_Click(object sender, EventArgs e){languageGER();}
+        private void TSMEng_Click(object sender, EventArgs e) { languageENG(); }
+        private void TSMIta_Click(object sender, EventArgs e) { languageITA(); }
+        private void TSMGer_Click(object sender, EventArgs e) { languageGER(); }
         //
         //UNTERPROGRAMME
         //
-        // impoertiert M3U- Dateien in dem Datagridview
+        // importiert M3U- Dateien in dem Datagridview
         private void OpenM3U(string UnsplittedText)
         {
             string[] Kanal = UnsplittedText.Split(new string[] { "#EXTINF" }, StringSplitOptions.None);
@@ -994,7 +1131,7 @@ namespace IPTVEdit
                 txtChangeIDEPG.Text = DGChannel[2, selectedIndex].Value.ToString();
                 txtChangeNameEPG.Text = DGChannel[3, selectedIndex].Value.ToString();
                 txtChangeEPGShift.Text = DGChannel[4, selectedIndex].Value.ToString();
-                txtChangeGroup.Text = DGChannel[5, selectedIndex].Value.ToString();
+                CBChangeGroup.SelectedItem = DGChannel[5, selectedIndex].Value.ToString();
                 txtChangeIP.Text = DGChannel[6, selectedIndex].Value.ToString();
                 txtChangeLogo.Text = DGChannel[7, selectedIndex].Value.ToString();
                 CBTVRadio.SelectedItem = DGChannel[8, selectedIndex].Value.ToString();
@@ -1007,7 +1144,7 @@ namespace IPTVEdit
                 txtChangeName.Text = "";
                 txtChangeNameEPG.Text = "";
                 txtChangeEPGShift.Text = "";
-                txtChangeGroup.Text = "";
+                CBChangeGroup.SelectedIndex = 0;
                 txtChangeIP.Text = "";
                 txtSort.Text = "";
                 txtChangeLogo.Text = "";
@@ -1192,38 +1329,70 @@ namespace IPTVEdit
         // Eingabehilfe für Favoriten
         private void FavouriteHelp()
         {
-            string[] Fav = new string[DGChannel.RowCount];
-            for (int i = 0; i < DGChannel.RowCount; i++)
+            CBChangeGroup.Items.Clear();
+            // Beim Start soll er die Favoriten aus dem Datagrid entnehmen und in der Variable Favourite speichern
+            if (Favourite == null)
             {
-                Fav[i] = DGChannel.Rows[i].Cells[5].Value.ToString();
-            }
-            string[] Fav2 = Fav;
-            for (int j = 0; j < Fav.Length; j++)
-            {
-                for (int k = 0; k < Fav.Length; k++)
+                string[] Fav = new string[DGChannel.RowCount];
+                for (int i = 0; i < DGChannel.RowCount; i++)
                 {
-                    if (Fav2[j] == Fav[k] && j != k)
+                    Fav[i] = DGChannel.Rows[i].Cells[5].Value.ToString();
+                }
+
+                string[] Fav2 = Fav;
+                for (int j = 0; j < Fav.Length; j++)
+                {
+                    for (int k = 0; k < Fav.Length; k++)
                     {
-                        Fav2[j] = "";
+                        if (Fav2[j] == Fav[k] && j != k)
+                        {
+                            Fav2[j] = "";
+                        }
+                    }
+                }
+                int z = 0;
+                for (int l = 0; l < Fav2.Length; l++)
+                {
+                    if (Fav2[l] != "")
+                    {
+                        z++;
+                    }
+                }
+                Favourite = new string[z];
+                z = 0;
+                CBChangeGroup.Items.Add("");
+                for (int m = 0; m < Fav.Length; m++)
+                {
+                    if (Fav2[m] != "")
+                    {
+                        Favourite[z] = Fav2[m];
+                        CBChangeGroup.Items.Add(Favourite[z]);
+                        z++;
                     }
                 }
             }
-            int z = 0;
-            for (int l = 0; l < Fav2.Length; l++)
+            else
             {
-                if (Fav2[l] != "")
+                string[] Favourite2 = Favourite;
+                int z = 0;                 // z = Anzahl der Favoriten
+                CBChangeGroup.Items.Add("");
+                for (int n = 0; n < Favourite2.Length; n++)
                 {
-                    z++;
+                    if (Favourite2[n] != null)
+                    {
+                        z++;
+                    }
                 }
-            }
-            Favourite = new string[z];
-            z = 0;
-            for (int m = 0; m < Fav.Length; m++)
-            {
-                if (Fav2[m] != "")
+                Favourite = new string[z];
+                z = 0;
+                for (int o = 0; o < Favourite.Length; o++)
                 {
-                    Favourite[z] = Fav2[m];
-                    z++;
+                    if (Favourite2[o] != "")
+                    {
+                        Favourite[z] = Favourite2[o];
+                        CBChangeGroup.Items.Add(Favourite[z]);
+                        z++;
+                    }
                 }
             }
         }
@@ -1269,10 +1438,13 @@ namespace IPTVEdit
             //TSMEPG
             TSMEpgCheckSimpleIPTV.Text = "Sender für Simple IPTV umbenennen";
             TSMLoadEPG.Text = "EPG laden";
+            //TSMUPDATE
+            TSMCheckUpdate.Text = "Nach Updates prüfen";
             //
             btnAddClose.Text = "Abbrechen";
             btnAdd.Text = "Hinzufügen";
             btnChangeOK.Text = "Ändern";
+            btnFavourite.Text = "Favoriten bearbeiten";
             lblSort.Text = "Geben Sie die neue Nummer ein";
             lblChangeName.Text = "Name des Senders";
             lblChangeNameEPG.Text = "Name des Senders (für EPG)";
@@ -1284,7 +1456,8 @@ namespace IPTVEdit
             SaveError = "Datei konnte nicht gespeichert werden";
             SaveError2 = "Die Senderliste ist leer";
             SaveSuccess = "Die Datei wurde erfolgreich gespeichert";
-
+            MessageVersionOK = "Sie haben die neuste Version";
+            MessageVersionOld = "Sie haben eine veraltete Version. Möchten Sie die aktuelle Version runterladen?";
             // Für den nächsten Start merken
             lang = "GER";
             for (int i = 0; i < DefaultConfig.Length; i++)
@@ -1334,11 +1507,14 @@ namespace IPTVEdit
             //TSMEPG
             TSMEpgCheckSimpleIPTV.Text = "Rinomina EPG per Simple IPTV";
             TSMLoadEPG.Text = "Carica EPG";
+            //TSMUPDATE
+            TSMCheckUpdate.Text = "Cerca aggiornamenti";
             //
             TSMEng.Enabled = true; TSMGer.Enabled = true; TSMIta.Enabled = false;
             btnAddClose.Text = "Cancella";
             btnAdd.Text = "Aggiungi";
             btnChangeOK.Text = "Modifica";
+            btnFavourite.Text = "Modifica favoriti";
             lblSort.Text = "Inserire il nuovo numero del canale";
             lblChangeName.Text = "Nome del canale";
             lblChangeNameEPG.Text = "Nome del canale (per l'EPG)";
@@ -1350,7 +1526,8 @@ namespace IPTVEdit
             SaveError = "Il file non é stato salvato";
             SaveError2 = "La lista é vuota";
             SaveSuccess = "Il file é stato salvato";
-
+            MessageVersionOK = "Hai la versione attuale.";
+            MessageVersionOld = "Non hai la versione attuale. Vuoi scaricarla?";
             // Für den nächsten Start merken
             lang = "ITA";
             for (int i = 0; i < DefaultConfig.Length; i++)
@@ -1402,11 +1579,14 @@ namespace IPTVEdit
             //TSMEPG
             TSMEpgCheckSimpleIPTV.Text = "Change Epg-Names for Simple IPTV";
             TSMLoadEPG.Text = "Load EPG";
+            //TSMUPDATE
+            TSMCheckUpdate.Text = "Check for Update";
             //
             TSMEng.Enabled = false; TSMGer.Enabled = true; TSMIta.Enabled = true;
             btnAddClose.Text = "Cancel";
             btnAdd.Text = "Add";
             btnChangeOK.Text = "Change";
+            btnFavourite.Text = "Edit favourites";
             lblSort.Text = "Enter the new channel number";
             lblChangeName.Text = "Channel name";
             lblChangeNameEPG.Text = "Channel name (for EPG)";
@@ -1418,7 +1598,8 @@ namespace IPTVEdit
             SaveError = "File could not be saved";
             SaveError2 = "The channel list is empty";
             SaveSuccess = "File has been successfully saved";
-
+            MessageVersionOK = "You have the newest version.";
+            MessageVersionOld = "You have an old version. Do you want to download the new one?";
             // Für den nächsten Start merken
             lang = "ENG";
             for (int i = 0; i < DefaultConfig.Length; i++)
