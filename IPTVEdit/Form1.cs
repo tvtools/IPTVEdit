@@ -10,19 +10,22 @@ using System.Windows.Forms;
 using System.IO;
 using System.Net;
 using System.IO.Compression;
+using WinSCP;
 
 namespace IPTVEdit
 {
     public partial class Form1 : Form
     {
-        string VersionNr = "1.15.7";
-        bool changed = false; // Für die Nachfrage beim Programm Schließen oder neu laden
-        string lang = "", Info = "", DGNumber = "", DGName = "", DGEPGName = "", DGEPGShift = "", DGGroup = "", SaveError = "", SaveError2 = "", SaveSuccess = "", SafeWarning = "", SafeQuestionEPG = "", SafeQuestionLogo = "", MessageDuplicates = "", MessageVersionOK = "", MessageVersionOld = "";
+        string VersionNr = "1.15.9";
+        bool changed = false, m3uorepg = true;// Für die Nachfrage beim Programm Schließen oder neu laden
+        string pth = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetModules()[0].FullyQualifiedName);
+        string lang = "", Info = "", DGNumber = "", DGName = "", DGEPGName = "", DGEPGShift = "", DGGroup = "", SaveError = "", SaveError2 = "", SaveSuccess = "", SafeWarning = "", SafeQuestion = "", SafeQuestionLogo = "", MessageDuplicates = "", MessageVersionOK = "", MessageVersionOld = "";
         // Variablen fuer Logo
         string LogoDownload = "";
         string LogoLoadOK = "", LogoLoadError = "";
-        string[] Favourite, LogoNames = new string[0], EPGID = new string[0], EPG = new string[0], EpgNames = new string[0], EpgNamesSimple = new string[0], EpgDir2, LogoDir2;
-        string EpgDir = "", LogoDir = "";
+        string[] Favourite, LogoNames = new string[0], EPGID = new string[0], EPG = new string[0], EpgNames = new string[0], EpgNamesSimple = new string[0], EpgDir2, LogoDir2, m3uURL2, FTPUser2, FTPPw2, FTPIP2, FTPDir2, FTPorSFTP2, FTPFilename2;
+        string EpgDir = "", LogoDir = "", m3uURL = "", FTPUser = "", FTPPw = "", FTPIP = "", FTPDir = "", FTPFilename="list.m3u";
+        int FTPorSFTP = 0;
         //
         string[] DefaultConfig;
         public Form1()
@@ -52,6 +55,41 @@ namespace IPTVEdit
                 {
                     LogoDir2 = DefaultConfig[i].Split('<', '>');
                     LogoDir = LogoDir2[1];
+                }
+                if (DefaultConfig[i].Contains("m3uURL:<"))
+                {
+                    m3uURL2 = DefaultConfig[i].Split('<', '>');
+                    m3uURL = m3uURL2[1];
+                }
+                if (DefaultConfig[i].Contains("FTP:<"))
+                {
+                    FTPorSFTP2 = DefaultConfig[i].Split('<', '>');
+                    FTPorSFTP = Convert.ToInt32(FTPorSFTP2[1]);
+                }
+                if (DefaultConfig[i].Contains("FTPUser:<"))
+                {
+                    FTPUser2 = DefaultConfig[i].Split('<', '>');
+                    FTPUser = FTPUser2[1];
+                }
+                if (DefaultConfig[i].Contains("FTPPw:<"))
+                {
+                    FTPPw2 = DefaultConfig[i].Split('<', '>');
+                    FTPPw = FTPPw2[1];
+                }
+                if (DefaultConfig[i].Contains("FTPIP:<"))
+                {
+                    FTPIP2 = DefaultConfig[i].Split('<', '>');
+                    FTPIP = FTPIP2[1];
+                }
+                if (DefaultConfig[i].Contains("FTPDir:<"))
+                {
+                    FTPDir2 = DefaultConfig[i].Split('<', '>');
+                    FTPDir = FTPDir2[1];
+                }
+                if (DefaultConfig[i].Contains("FTPFilename:<"))
+                {
+                    FTPFilename2 = DefaultConfig[i].Split('<', '>');
+                    FTPFilename = FTPFilename2[1];
                 }
                 if (DefaultConfig[i].Contains("SimpleIPTV = 1") && TSMEpgCheckSimpleIPTV.Checked == false)
                 {
@@ -100,19 +138,19 @@ namespace IPTVEdit
         {
             if (DGChannel.SelectedRows.Count >= 2)
             {
-          //      txtChangeEPGShift.Text = "";
+                //      txtChangeEPGShift.Text = "";
                 txtChangeEPGShift.Enabled = false;
-            //    txtChangeIDEPG.Text = "";
+                //    txtChangeIDEPG.Text = "";
                 txtChangeIDEPG.Enabled = false;
-              //  txtChangeIP.Text = "";
+                //  txtChangeIP.Text = "";
                 txtChangeIP.Enabled = false;
-             //   txtChangeLogo.Text = "";
+                //   txtChangeLogo.Text = "";
                 txtChangeLogo.Enabled = false;
-              //  txtChangeName.Text = "";
+                //  txtChangeName.Text = "";
                 txtChangeName.Enabled = false;
-              //  txtChangeNameEPG.Text = "";
+                //  txtChangeNameEPG.Text = "";
                 txtChangeNameEPG.Enabled = false;
-              //  txtSort.Text = "";
+                //  txtSort.Text = "";
                 txtSort.Enabled = false;
                 btnAddChannel.Enabled = false;
             }
@@ -332,7 +370,13 @@ namespace IPTVEdit
                 int pos = Convert.ToInt32(txtSort.Text);
                 if (DGChannel.Rows.Count != 0)
                 {
-                    DGChannel.Rows.Add(DGChannel.Rows.Count + 1, txtChangeName.Text, txtChangeIDEPG.Text, txtChangeNameEPG.Text, txtChangeEPGShift.Text, CBChangeGroup.SelectedItem, txtChangeIP.Text, txtChangeLogo.Text, CBTVRadio.SelectedItem.ToString());
+                    // Favorit in Variable favgroup abspeichern
+                    string favgroup = "";
+                    if (CBChangeGroup.SelectedItem == null) favgroup = "";
+                    else favgroup = CBChangeGroup.SelectedItem.ToString();
+                    //
+                    //Neuen Sender hinzufügen mit eingegebenen Werte übernehmen
+                    DGChannel.Rows.Add(DGChannel.Rows.Count + 1, txtChangeName.Text, txtChangeIDEPG.Text, txtChangeNameEPG.Text, txtChangeEPGShift.Text, favgroup, txtChangeIP.Text, txtChangeLogo.Text, CBTVRadio.SelectedItem.ToString());
                     DGChannel.Rows[DGChannel.Rows.Count - 1].Selected = true;// Das verschobene Objekt an der neuen Stelle selektieren
                     if (txtSort.Text != Convert.ToString(DGChannel.Rows.Count + 1))
                     {
@@ -501,7 +545,9 @@ namespace IPTVEdit
 
             Favourite = null; FavouriteHelp(); Favourite = null;
         }
-        private void TSMOpen_Click(object sender, EventArgs e)
+        // File -> TSMOpenM3U
+        // Öffnet M3U - Datei vom Ordner
+        private void TSMM3UfromFile_Click(object sender, EventArgs e)
         {
             openFileDialog1.Filter = "M3U-file (*.m3u)|*.m3u";
             openFileDialog1.FilterIndex = 1;
@@ -525,22 +571,128 @@ namespace IPTVEdit
                 LogoCheck(); EPGCheck(); Favourite = null; FavouriteHelp(); ChangeChannel();
             }
         }
-        private void TSMAddCode_Click(object sender, EventArgs e)
+        // Öffnet M3U - Datei vom URL
+        private void TSMM3UfromURL_Click(object sender, EventArgs e)
+        {
+            grpURL.Visible = true;
+            DGChannel.Enabled = false; TSMSortby.Enabled = false; TSMTools.Enabled = false; TSMFile.Enabled = false; TSMOthers.Enabled = false;
+            if (m3uURL == "") txtURL.Text = "http://";
+            else txtURL.Text = m3uURL;
+        }
+        // Öffnet M3U - Datei mit eingefügtem Code
+        private void TSMM3UfromCode_Click(object sender, EventArgs e)
         {
             string M3UCode = "";
             FormAddCode frmAC = new FormAddCode(lang);
             frmAC.ShowDialog();
-            M3UCode = frmAC.setText();
-            if (DGChannel.RowCount == 0)
+            try
             {
-                DGChannel.Rows.Clear(); DGChannel.Columns.Clear(); DGChannel.ColumnCount = 9; DGChannelTitel();
+                M3UCode = frmAC.setText();
+                if (DGChannel.RowCount == 0)
+                {
+                    DGChannel.Rows.Clear(); DGChannel.Columns.Clear(); DGChannel.ColumnCount = 9; DGChannelTitel();
+                }
+                OpenM3U(M3UCode);
+                DGChannel.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                SortbyNewIndex(); BackgroundChange();
+                if (DGChannel.RowCount != 0) this.DGChannel.Rows[0].Selected = true;
+                ChangeChannel(); LogoCheck(); EPGCheck(); Favourite = null; FavouriteHelp();
             }
-            OpenM3U(M3UCode);
-            DGChannel.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
-            SortbyNewIndex(); BackgroundChange();
-            if (DGChannel.RowCount != 0) this.DGChannel.Rows[0].Selected = true;
-            ChangeChannel(); LogoCheck(); EPGCheck(); Favourite = null; FavouriteHelp();
+            catch { }
         }
+        //
+        //TSMFTP
+        //
+        //
+        // Server Einstellungen
+        private void TSMFTPConfig_Click(object sender, EventArgs e)
+        {
+            txtFTPUser.Text = FTPUser;
+            txtFTPPw.Text = FTPPw;
+            txtFTPIP.Text = FTPIP;
+            txtFTPDir.Text = FTPDir;
+            if (FTPFilename == "") FTPFilename = "List.m3u";
+            txtFTPFilename.Text = FTPFilename;
+            if (FTPorSFTP == 0)
+            {
+                rbFTP.Checked = false; rbSFTP.Checked = true;
+            }
+            else
+            {
+                rbSFTP.Checked = false; rbFTP.Checked = true;
+            }
+            grpFTP.Left = (this.Width - grpFTP.Width) / 2;
+            grpFTP.Top = (this.Height - grpFTP.Height) / 2;
+            grpFTP.Visible = true;
+            DGChannel.Enabled = false; TSMSortby.Enabled = false; TSMTools.Enabled = false; TSMFile.Enabled = false; TSMOthers.Enabled = false;
+
+        }
+        private void TSMFTPUpload_Click(object sender, EventArgs e)
+        {
+            string ftpurl = FTPIP + FTPDir;
+            string source = pth + "\\temp\\" + FTPFilename;
+            //M3U - Datei schreiben
+            string Testo = CreateM3UFromList();
+            File.WriteAllText(source, Testo, Encoding.UTF8);
+            if (FTPDir != "" && FTPFilename != "" && ftpurl != "" && FTPPw != "" && FTPUser != "")
+            {
+                if (FTPDir.StartsWith("/") == false) FTPDir = "/" + FTPDir;
+                if (FTPDir.EndsWith("/") == false) FTPDir = FTPDir + "/";
+                string upload = UploadFileToServer(FTPorSFTP, source, FTPIP, FTPDir, FTPUser, FTPPw, pth);
+                MessageBox.Show(upload, "", MessageBoxButtons.OK);
+            }
+            else MessageBox.Show("Please check FTP - Config");            
+        }
+        //FTP - Einstellung schließen mit Änderung speichern
+        private void btnFTPSave_Click(object sender, EventArgs e)
+        {
+            //in default.config speichern
+            if (rbFTP.Checked) FTPorSFTP = 1;
+            else FTPorSFTP = 0;
+            FTPUser = txtFTPUser.Text;
+            FTPPw = txtFTPPw.Text;
+            FTPIP = txtFTPIP.Text;
+            FTPDir = txtFTPDir.Text;
+            FTPFilename = txtFTPFilename.Text;
+            for (int i = 0; i < DefaultConfig.Length; i++)
+            {
+                if (DefaultConfig[i].Contains("FTP:<"))
+                {
+                    DefaultConfig[i] = "FTP:<" + FTPorSFTP + ">";
+                }
+                if (DefaultConfig[i].Contains("FTPUser:<"))
+                {
+                    DefaultConfig[i] = "FTPUser:<" + FTPUser + ">";
+                }
+                if (DefaultConfig[i].Contains("FTPPw:<"))
+                {
+                    DefaultConfig[i] = "FTPPw:<" + FTPPw + ">";
+                }
+                if (DefaultConfig[i].Contains("FTPIP:<"))
+                {
+                    DefaultConfig[i] = "FTPIP:<" + FTPIP + ">";
+                }
+                if (DefaultConfig[i].Contains("FTPDir:<"))
+                {
+                    DefaultConfig[i] = "FTPDir:<" + FTPDir + ">";
+                }
+                if (DefaultConfig[i].Contains("FTPFilename:<"))
+                {
+                    DefaultConfig[i] = "FTPFilename:<" + FTPFilename + ">";
+                }
+            }
+            WriteInDefaultConfig();
+
+            grpFTP.Visible = false;
+            DGChannel.Enabled = true; TSMSortby.Enabled = true; TSMTools.Enabled = true; TSMFile.Enabled = true; TSMOthers.Enabled = true;
+        }
+        //FTP - Einstellung schließen ohne Änderung speichern
+        private void btnFTPCancel_Click(object sender, EventArgs e)
+        {
+            grpFTP.Visible = false;
+            DGChannel.Enabled = true; TSMSortby.Enabled = true; TSMTools.Enabled = true; TSMFile.Enabled = true; TSMOthers.Enabled = true;
+        }
+        // Speichert die Tabelle als M3U-Datei
         private void TSMSave_Click(object sender, EventArgs e)
         {
             try
@@ -551,22 +703,7 @@ namespace IPTVEdit
                     saveFileDialog1.FilterIndex = 1;
                     saveFileDialog1.RestoreDirectory = true;
                     saveFileDialog1.ShowDialog();
-                    string Testo = "";
-                    Testo = "#EXTM3U" + Environment.NewLine;
-                    for (int i = 0; i < DGChannel.Rows.Count; i++)
-                    {
-                        string tvgname = DGChannel[3, i].Value.ToString().Replace("\r", "");
-                        string tvgshift = DGChannel[4, i].Value.ToString().Replace("\r", "");
-                        string tvglogo = DGChannel[7, i].Value.ToString().Replace("\r", "");
-                        string grouptitle = DGChannel[5, i].Value.ToString().Replace("\r", "");
-                        string sendername = DGChannel[1, i].Value.ToString().Replace("\r", "");
-                        string tvgid = DGChannel[2, i].Value.ToString().Replace("\r", "");
-                        string senderip = DGChannel[6, i].Value.ToString().Replace("\r", "");
-                        string tvradio = DGChannel[8, i].Value.ToString().Replace("\r", "");
-                        if (tvradio == "TV") tvradio = "";
-                        else tvradio = "true";
-                        Testo = Testo + "#EXTINF:-1 tvg-id=" + '\u0022' + tvgid + '\u0022' + " tvg-name=" + '\u0022' + tvgname + '\u0022' + " tvg-shift=" + '\u0022' + tvgshift + '\u0022' + " radio=" + '\u0022' + tvradio + '\u0022' + " tvg-logo=" + '\u0022' + tvglogo + '\u0022' + " group-title=" + '\u0022' + grouptitle + '\u0022' + "," + sendername + Environment.NewLine + senderip + Environment.NewLine;
-                    }
+                    string Testo = CreateM3UFromList();
                     File.WriteAllText(saveFileDialog1.FileName, Testo, Encoding.UTF8);
                     changed = false;
                     MessageBox.Show(SaveSuccess, "", MessageBoxButtons.OK);
@@ -578,6 +715,8 @@ namespace IPTVEdit
                 MessageBox.Show(SaveError, "", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        //
+        //
         //
         //Tools
         //Tools -> Blacklist
@@ -622,7 +761,7 @@ namespace IPTVEdit
                 }
             }
         }
-        //Tools
+        //Tools -> Duplicate
         private void TSMDuplicate_Click(object sender, EventArgs e)
         {
             int ChannelCount = DGChannel.RowCount;
@@ -749,6 +888,7 @@ namespace IPTVEdit
             PbLoad.Value = e.ProgressPercentage;
             PbLoad.Visible = true;
         }
+
         private void Completed(object sender, AsyncCompletedEventArgs e)
         {
             string pth = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetModules()[0].FullyQualifiedName);
@@ -764,9 +904,19 @@ namespace IPTVEdit
             PbLoad.Visible = false;
         }
         //Tools -> EPG
-        private void TSMLoadEPG_Click(object sender, EventArgs e)
+        //Öffnet und lädt EPG vom Internet
+        private void TSMOpenEPGFromInternet_Click(object sender, EventArgs e)
         {
-            OFDEpg.Filter = "XML-file (*.xml)|*.xml";
+            m3uorepg = false;
+            grpURL.Visible = true;
+            DGChannel.Enabled = false; TSMSortby.Enabled = false; TSMTools.Enabled = false; TSMFile.Enabled = false; TSMOthers.Enabled = false;
+            txtURL.Text = "http://";
+        }
+        //Öffnet und lädt EPG-Datei vom Computer
+        private void TSMOpenEPGFromFile_Click(object sender, EventArgs e)
+        {
+            m3uorepg = false;
+            OFDEpg.Filter = "EPG-file (*.xml , *.gz)|*.xml; *.gz|All files|*.*";
             OFDEpg.FilterIndex = 1;
             OFDEpg.RestoreDirectory = true;
             if (OFDEpg.ShowDialog() == DialogResult.OK)
@@ -776,6 +926,7 @@ namespace IPTVEdit
             }
             EPGCheck();
         }
+        //ersetzt die Leerzeichen in "_" um
         private void TSMEpgCheckSimpleIPTV_Click(object sender, EventArgs e)
         {
             EPGCheck();
@@ -792,47 +943,131 @@ namespace IPTVEdit
             }
             WriteInDefaultConfig();
         }
+        //Benennt die IP-Endung .ts in m3u8 um
+        private void TSMRenameIPEndToM3U8_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < DGChannel.RowCount; i++)
+            {
+                string IPOrig = DGChannel.Rows[i].Cells[6].Value.ToString();
+                string IPNew = "";
+                if (IPOrig.EndsWith(".ts"))
+                {
+                    IPNew = IPOrig.Replace(".ts", ".m3u8");
+                    DGChannel.Rows[i].Cells[6].Value = IPNew;
+                }
+            }
+        }
+        private void btnURLCANCEL_Click(object sender, EventArgs e)
+        {
+            grpURL.Visible = false;
+            DGChannel.Enabled = true; TSMSortby.Enabled = true; TSMTools.Enabled = true; TSMFile.Enabled = true; TSMOthers.Enabled = true;
+        }
+        // wird für epg und m3u - Dateien beutzt
+        private void btnURL_Click(object sender, EventArgs e)
+        {
+            if (m3uorepg == true)
+            {
+                try
+                {
+                    WebClient webClient = new WebClient();
+                    string urldownload = pth + "\\temp\\downloadedM3U";
+                    webClient.DownloadFile(txtURL.Text, urldownload);
+
+                    System.IO.StreamReader ReadM3U = new System.IO.StreamReader(urldownload);
+                    string Unsplitted = ReadM3U.ReadToEnd();
+                    ReadM3U.Close();
+
+                    if (DGChannel.RowCount == 0)
+                    {
+                        DGChannel.Rows.Clear(); DGChannel.Columns.Clear(); DGChannel.ColumnCount = 9; DGChannelTitel();
+                    }
+
+                    OpenM3U(Unsplitted);
+
+                    DGChannel.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+                    SortbyNewIndex(); BackgroundChange();
+                    if (DGChannel.RowCount != 0) this.DGChannel.Rows[0].Selected = true;
+                    LogoCheck(); EPGCheck(); Favourite = null; FavouriteHelp(); ChangeChannel();
+
+                    if (m3uURL != txtURL.Text)
+                    {
+                        DialogResult dr = MessageBox.Show(SafeQuestion, "", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                        if (dr == DialogResult.Yes)
+                        {
+                            m3uURL = txtURL.Text;
+                            for (int i = 0; i < DefaultConfig.Length; i++)
+                            {
+                                if (DefaultConfig[i].Contains("m3uURL:<"))
+                                {
+                                    DefaultConfig[i] = "m3uURL:<" + txtURL.Text + ">";
+                                }
+                            }
+                            WriteInDefaultConfig();
+                        }
+                    }
+
+                }
+                catch
+                {
+                    MessageBox.Show("Invalid URL", "Error", MessageBoxButtons.OK);
+                }
+            }
+            else
+            {
+                LoadEPG(txtURL.Text);
+                EPGCheck();
+            }
+            grpURL.Visible = false;
+            DGChannel.Enabled = true; TSMSortby.Enabled = true; TSMTools.Enabled = true; TSMFile.Enabled = true; TSMOthers.Enabled = true;
+        }
+
         //
         //Sort (Toolstripmenu)
         // Sortiert Sender nach Name von a-z und umgekehrt
         private void TSMSortbyName_Click(object sender, EventArgs e)
         {
-            string[] NewText;
-            if (TSMSortbyName.Text == "Sortiere Sender nach Name (A-Z)" || TSMSortbyName.Text == "Sort channels by name (A-Z)" || TSMSortbyName.Text == "Ordina canali dal nome (A-Z)")
+            if (DGChannel.RowCount != 0)
             {
-                DGChannel.Sort(DGChannel.Columns[1], System.ComponentModel.ListSortDirection.Ascending);
-                NewText = TSMSortbyName.Text.Split('(');
-                TSMSortbyName.Text = NewText[0] + "(Z-A)";
-                BackgroundChange(); SortbyNewIndex(); changed = true;
+                string[] NewText;
+                if (TSMSortbyName.Text == "Sortiere Sender nach Name (A-Z)" || TSMSortbyName.Text == "Sort channels by name (A-Z)" || TSMSortbyName.Text == "Ordina canali dal nome (A-Z)")
+                {
+                    DGChannel.Sort(DGChannel.Columns[1], System.ComponentModel.ListSortDirection.Ascending);
+                    NewText = TSMSortbyName.Text.Split('(');
+                    TSMSortbyName.Text = NewText[0] + "(Z-A)";
+                    BackgroundChange(); SortbyNewIndex(); changed = true;
+                }
+                else
+                {
+                    DGChannel.Sort(DGChannel.Columns[1], System.ComponentModel.ListSortDirection.Descending);
+                    NewText = TSMSortbyName.Text.Split('(');
+                    TSMSortbyName.Text = NewText[0] + "(A-Z)";
+                    BackgroundChange(); SortbyNewIndex(); changed = true;
+                }
+                changed = false;
             }
-            else
-            {
-                DGChannel.Sort(DGChannel.Columns[1], System.ComponentModel.ListSortDirection.Descending);
-                NewText = TSMSortbyName.Text.Split('(');
-                TSMSortbyName.Text = NewText[0] + "(A-Z)";
-                BackgroundChange(); SortbyNewIndex(); changed = true;
-            }
-            changed = false;
         }
         //Sortiert Sender nach Favoriten von a-z und umgekehrt
         private void TSMSortbyFavourite_Click(object sender, EventArgs e)
         {
-            string[] NewText;
-            if (TSMSortbyFavourite.Text == "Sort channels by favourite (A-Z)" || TSMSortbyFavourite.Text == "Sortiere Sender nach Favorit (A-Z)" || TSMSortbyFavourite.Text == "Ordina canali da favoriti (A-Z)")
+            if (DGChannel.RowCount != 0)
             {
-                DGChannel.Sort(DGChannel.Columns[5], System.ComponentModel.ListSortDirection.Ascending);
-                NewText = TSMSortbyFavourite.Text.Split('(');
-                TSMSortbyFavourite.Text = NewText[0] + "(Z-A)";
-                BackgroundChange(); SortbyNewIndex(); changed = true;
+                string[] NewText;
+                if (TSMSortbyFavourite.Text == "Sort channels by favourite (A-Z)" || TSMSortbyFavourite.Text == "Sortiere Sender nach Favorit (A-Z)" || TSMSortbyFavourite.Text == "Ordina canali da favoriti (A-Z)")
+                {
+                    DGChannel.Sort(DGChannel.Columns[5], System.ComponentModel.ListSortDirection.Ascending);
+                    NewText = TSMSortbyFavourite.Text.Split('(');
+                    TSMSortbyFavourite.Text = NewText[0] + "(Z-A)";
+                    BackgroundChange(); SortbyNewIndex(); changed = true;
+                }
+                else
+                {
+                    DGChannel.Sort(DGChannel.Columns[5], System.ComponentModel.ListSortDirection.Descending);
+                    NewText = TSMSortbyFavourite.Text.Split('(');
+                    TSMSortbyFavourite.Text = NewText[0] + "(A-Z)";
+                    BackgroundChange(); SortbyNewIndex(); changed = true;
+                }
+                changed = false;
             }
-            else
-            {
-                DGChannel.Sort(DGChannel.Columns[5], System.ComponentModel.ListSortDirection.Descending);
-                NewText = TSMSortbyFavourite.Text.Split('(');
-                TSMSortbyFavourite.Text = NewText[0] + "(A-Z)";
-                BackgroundChange(); SortbyNewIndex(); changed = true;
-            }
-            changed = false;
         }
         //Versucht die Sender von einer M3U-Datei zu sortieren
         private void TSMSortbyFile_Click(object sender, EventArgs e)
@@ -952,7 +1187,8 @@ namespace IPTVEdit
                     DGChannel.Rows.Add(TestView.Rows[di].Cells[0].Value, TestView.Rows[di].Cells[1].Value, TestView.Rows[di].Cells[2].Value, TestView.Rows[di].Cells[3].Value, TestView.Rows[di].Cells[4].Value, TestView.Rows[di].Cells[5].Value, TestView.Rows[di].Cells[6].Value, TestView.Rows[di].Cells[7].Value, TestView.Rows[di].Cells[8].Value);
                 }
                 BackgroundChange(); SortbyNewIndex();
-                DGChannel.Rows[0].Selected = true; ChangeChannel(); EPGCheck(); LogoCheck(); changed = true;
+                DGChannel.Rows[0].Selected = true; changed = true;
+                LogoCheck(); EPGCheck(); Favourite = null; FavouriteHelp(); ChangeChannel();
             }
         }
         //
@@ -986,6 +1222,32 @@ namespace IPTVEdit
         //UNTERPROGRAMME
         //
         // importiert M3U- Dateien in dem Datagridview
+        private string CreateM3UFromList()
+        {
+            string Testo = "";
+            Testo = "#EXTM3U" + Environment.NewLine;
+            for (int i = 0; i < DGChannel.Rows.Count; i++)
+            {
+                string tvgname = DGChannel[3, i].Value.ToString().Replace("\r", "");
+                string tvgshift = DGChannel[4, i].Value.ToString().Replace("\r", "");
+                string tvglogo = DGChannel[7, i].Value.ToString().Replace("\r", "");
+
+                string grouptitle = "";
+                if (DGChannel[5, i].Value != null) grouptitle = DGChannel[5, i].Value.ToString().Replace("\r", "");
+
+                string sendername = DGChannel[1, i].Value.ToString().Replace("\r", "");
+                string tvgid = DGChannel[2, i].Value.ToString().Replace("\r", "");
+                string senderip = DGChannel[6, i].Value.ToString().Replace("\r", "");
+
+                string tvradio = DGChannel[8, i].Value.ToString().Replace("\r", "");
+                if (tvradio == "TV") tvradio = "";
+                else tvradio = "true";
+
+                Testo = Testo + "#EXTINF:-1 tvg-id=" + '\u0022' + tvgid + '\u0022' + " tvg-name=" + '\u0022' + tvgname + '\u0022' + " tvg-shift=" + '\u0022' + tvgshift + '\u0022' + " radio=" + '\u0022' + tvradio + '\u0022' + " tvg-logo=" + '\u0022' + tvglogo + '\u0022' + " group-title=" + '\u0022' + grouptitle + '\u0022' + "," + sendername + Environment.NewLine + senderip + Environment.NewLine;
+            }
+            return Testo;
+        }
+        // Setzt M3U-Liste in Datagrid ein
         private void OpenM3U(string UnsplittedText)
         {
             string[] Kanal = UnsplittedText.Split(new string[] { "#EXTINF" }, StringSplitOptions.None);
@@ -1061,60 +1323,132 @@ namespace IPTVEdit
                 destinationFolder.CopyHere(file, 4 | 16);
             }
         }
+        // entpackt die EPG-Datei aus der GZip - Datei
+        public static void Decompress(FileInfo fileToDecompress, string newFilePath)
+        {
+            try
+            {
+                using (FileStream originalFileStream = fileToDecompress.OpenRead())
+                {
+                    string currentFileName = fileToDecompress.FullName;
+                    //    string newFileName = currentFileName.Remove(currentFileName.Length - fileToDecompress.Extension.Length);
+                    if (File.Exists(newFilePath))
+                    {
+                        File.Delete(newFilePath);
+                    }
+                    using (FileStream decompressedFileStream = File.Create(newFilePath))
+                    {
+                        using (GZipStream decompressionStream = new GZipStream(originalFileStream, CompressionMode.Decompress))
+                        {
+                            decompressionStream.CopyTo(decompressedFileStream);
+                            Console.WriteLine("Decompressed: {0}", fileToDecompress.Name);
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
         // filtert von der XML-Datei die Werte für EPG-ID und EPG-Name
         private void LoadEPG(string url)
         {
-            System.IO.StreamReader file = new System.IO.StreamReader(url);//StreamReader für Datei initialisieren
-                                                                          // alle Zeile in Schleife ausgeben und weiter auseinander nehmen
-            string Unsplitted = file.ReadToEnd();
-            string[] Kanal = Unsplitted.Split(new string[] { "<display-name", "</display-name>" }, StringSplitOptions.None);
-            string[] SenderName = new string[Kanal.Length];
-            string[] SenderID = new string[Kanal.Length];
-            string[] SenderID2 = new string[Kanal.Length];
-            EpgNames = new string[Convert.ToInt32(Kanal.Length / 2)];
-            EpgNamesSimple = new string[EpgNames.Length];
-            EPGID = new string[EpgNames.Length];
-            int j = 0, j2 = 0;
-            for (int i = 0; i < Kanal.Length; i++)
+            bool ok = true;
+            string EPGDirNew = "";
+            if (url.StartsWith("http") || url.StartsWith("www."))
             {
-                if (i % 2 != 0)
-                {
-                    SenderName = Kanal[i].Split(new string[] { ">" }, StringSplitOptions.None);
-                    EpgNames[j] = SenderName[1];
-                    j++;
-                }
                 try
                 {
-                    if (i % 2 == 0)
+                    EPGDirNew = url;
+                    WebClient webClient = new WebClient();
+                    string urldownload = pth + "\\temp\\downloadedEPG";
+                    webClient.DownloadFile(url, urldownload);
+                    if (url.EndsWith(".gz"))
                     {
-                        SenderID = Kanal[i].Split(new string[] { "channel id=\"" }, StringSplitOptions.None);
-                        // SenderID2 = SenderID.
-                        SenderID2 = SenderID[1].Split(new string[] { "\"" }, StringSplitOptions.None);
-                        EPGID[j2] = SenderID2[0];
-                        //  EPGID[j2].Replace
-                        j2++;
+                        // UnZip(OFDEpg.FileName, url);
+                        FileInfo filetodecompress = new FileInfo(urldownload);
+
+                        url = pth + "\\temp\\xmlfile.xml";
+                        Decompress(filetodecompress, url);
                     }
                 }
-                catch { }
-            }
-            for (int k = 0; k < EpgNames.Length; k++)
-            {
-                EpgNamesSimple[k] = EpgNames[k].Replace(' ', '_');
-            }
-            if (OFDEpg.FileName != EpgDir && OFDEpg.FileName != "")
-            {
-                DialogResult dr = MessageBox.Show(SafeQuestionEPG, "", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (dr == DialogResult.Yes)
+                catch
                 {
-                    for (int i = 0; i < DefaultConfig.Length; i++)
+                    MessageBox.Show("Invalid URL", "Error", MessageBoxButtons.OK);
+                    ok = false;
+                }
+            }
+            else
+            {
+                if (url.EndsWith(".gz"))
+                {
+                    // UnZip(OFDEpg.FileName, url);
+                    FileInfo filetodecompress = new FileInfo(url);
+
+                    url = pth + "\\temp\\xmlfile.xml";
+                    Decompress(filetodecompress, url);
+                }
+                EPGDirNew = OFDEpg.FileName;
+            }
+            if (ok)
+            {
+                try
+                {
+                    System.IO.StreamReader file = new System.IO.StreamReader(url);//StreamReader für Datei initialisieren
+                                                                                  // alle Zeile in Schleife ausgeben und weiter auseinander nehmen
+                    string Unsplitted = file.ReadToEnd();
+                    string[] Kanal = Unsplitted.Split(new string[] { "<display-name", "</display-name>" }, StringSplitOptions.None);
+                    string[] SenderName = new string[Kanal.Length];
+                    string[] SenderID = new string[Kanal.Length];
+                    string[] SenderID2 = new string[Kanal.Length];
+                    EpgNames = new string[Convert.ToInt32(Kanal.Length / 2)];
+                    EpgNamesSimple = new string[EpgNames.Length];
+                    EPGID = new string[EpgNames.Length];
+                    int j = 0, j2 = 0;
+                    for (int i = 0; i < Kanal.Length; i++)
                     {
-                        if (DefaultConfig[i].Contains("EpgDir:<"))
+                        if (i % 2 != 0)
                         {
-                            DefaultConfig[i] = "EpgDir:<" + OFDEpg.FileName + ">";
+                            SenderName = Kanal[i].Split(new string[] { ">" }, StringSplitOptions.None);
+                            EpgNames[j] = SenderName[1];
+                            j++;
+                        }
+                        try
+                        {
+                            if (i % 2 == 0)
+                            {
+                                SenderID = Kanal[i].Split(new string[] { "channel id=\"" }, StringSplitOptions.None);
+                                // SenderID2 = SenderID.
+                                SenderID2 = SenderID[1].Split(new string[] { "\"" }, StringSplitOptions.None);
+                                EPGID[j2] = SenderID2[0];
+                                //  EPGID[j2].Replace
+                                j2++;
+                            }
+                        }
+                        catch { }
+                    }
+                    for (int k = 0; k < EpgNames.Length; k++)//Für simpleIPTV konvertieren
+                    {
+                        EpgNamesSimple[k] = EpgNames[k].Replace(' ', '_');
+                    }
+                    if (EPGDirNew != EpgDir && EPGDirNew != "")
+                    {
+                        DialogResult dr = MessageBox.Show(SafeQuestion, "", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                        if (dr == DialogResult.Yes)
+                        {
+                            EpgDir = EPGDirNew;
+                            for (int i = 0; i < DefaultConfig.Length; i++)
+                            {
+                                if (DefaultConfig[i].Contains("EpgDir:<"))
+                                {
+                                    DefaultConfig[i] = "EpgDir:<" + EpgDir + ">";
+                                }
+                            }
+                            WriteInDefaultConfig();
+
                         }
                     }
-                    WriteInDefaultConfig();
+                    file.Close();
                 }
+                catch { }
             }
         }
         //
@@ -1131,7 +1465,7 @@ namespace IPTVEdit
                 txtChangeIDEPG.Text = DGChannel[2, selectedIndex].Value.ToString();
                 txtChangeNameEPG.Text = DGChannel[3, selectedIndex].Value.ToString();
                 txtChangeEPGShift.Text = DGChannel[4, selectedIndex].Value.ToString();
-                CBChangeGroup.SelectedItem = DGChannel[5, selectedIndex].Value.ToString();
+                if (DGChannel[5, selectedIndex].Value != null) CBChangeGroup.SelectedItem = DGChannel[5, selectedIndex].Value.ToString();
                 txtChangeIP.Text = DGChannel[6, selectedIndex].Value.ToString();
                 txtChangeLogo.Text = DGChannel[7, selectedIndex].Value.ToString();
                 CBTVRadio.SelectedItem = DGChannel[8, selectedIndex].Value.ToString();
@@ -1396,34 +1730,142 @@ namespace IPTVEdit
                 }
             }
         }
+        // FTP- und SFTP-Upload
+        private string UploadFileToServer(int FTPorSFTP, string source, string ftphost, string ftpdir, string ftpusername, string ftppassword, string pth)
+        {
+            //SFTP
+            if (FTPorSFTP == 0)
+            {
+                try
+                {
+                    // Setup session options
+                    SessionOptions sessionOptions = new SessionOptions
+                    {
+                        Protocol = Protocol.Sftp,
+                        HostName = ftphost,
+                        UserName = ftpusername,
+                        Password = ftppassword,
+                        PortNumber = 22,
+                        GiveUpSecurityAndAcceptAnySshHostKey = true,
+                        SshHostKeyFingerprint = "9e:1a:5e:27:16:4d:2a:13:90:2c:64:41:bd:25:fd:35"
+                    };
+
+                    using (Session session = new Session())
+                    {
+                        // Connect
+                        session.ExecutablePath = pth + @"\res\WinSCP.exe";
+                        session.Open(sessionOptions);
+
+                        // Upload files
+                        TransferOptions transferOptions = new TransferOptions();
+                        transferOptions.TransferMode = TransferMode.Binary;
+
+                        TransferOperationResult transferResult;
+                        transferResult = session.PutFiles(source, ftpdir, false, transferOptions);
+
+                        // Throw on any error
+                        transferResult.Check();
+
+                        // Print results
+                        foreach (TransferEventArgs transfer in transferResult.Transfers)
+                        {
+                            Console.WriteLine("Upload of {0} succeeded", transfer.FileName);
+                        }
+                    }
+
+                    return SaveSuccess;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error: {0}", e);
+                    return e.ToString();
+                }
+            }
+            // FTP
+            else if (FTPorSFTP == 1)
+            {
+                try
+                {
+                    // Setup session options
+                    SessionOptions sessionOptions = new SessionOptions
+                    {
+                        Protocol = Protocol.Ftp,                        
+                        HostName = ftphost,
+                        UserName = ftpusername,
+                        Password = ftppassword
+                    };
+
+                    using (Session session = new Session())
+                    {
+                        // Connect
+                        session.ExecutablePath = pth + @"\res\WinSCP.exe";
+                        session.Open(sessionOptions);
+
+                        // Upload files
+                        TransferOptions transferOptions = new TransferOptions();
+                        transferOptions.TransferMode = TransferMode.Binary;
+
+                        TransferOperationResult transferResult;
+                        transferResult = session.PutFiles(source, ftpdir, false, transferOptions);
+
+                        // Throw on any error
+                        transferResult.Check();
+
+                        // Print results
+                        foreach (TransferEventArgs transfer in transferResult.Transfers)
+                        {
+                            Console.WriteLine("Upload of {0} succeeded", transfer.FileName);
+                        }
+                    }
+
+                    return SaveSuccess;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Error: {0}", e);
+                    return e.ToString();
+                }
+            }
+            else return "Error";
+        }
+
+        
         //
         //Sprachpakete
         //
         private void languageGER()
         {
             SafeWarning = "Sind sie sicher, dass sie ohne speichern fortsetzen möchten ?";
-            SafeQuestionEPG = "Wollen Sie diese Datei als Standarddatei festlegen?";
+            SafeQuestion = "Wollen Sie diese Datei als Standarddatei festlegen?";
             SafeQuestionLogo = "Wollen Sie diesen Ordner als Standardordner für Logos festlegen?";
             //FIle (ToolStripMenu)
             TSMFile.Text = "Datei";
             TSMNew.Text = "Neue Datei erstellen";
-            TSMOpen.Text = "M3U-Datei hinzufügen";
-            TSMAddCode.Text = "Sender mit M3U-Code hinzufügen";
+            TSMOpenM3U.Text = "M3U-Datei hinzufügen";
+            TSMM3UfromFile.Text = "M3U - Datei öffnen";
+            TSMM3UfromURL.Text = "M3U - Datei herunterladen";
+            TSMM3UfromCode.Text = "M3U - Code einfügen";
+            TSMFTPConfig.Text = "FTP-Einstellungen";
+            TSMFTPUpload.Text = "M3U-Liste auf FTP-Server hochladen";
             TSMSave.Text = "Speichern unter...";
+            //
             btnAddChannel.Text = "Sender hinzufügen";
             btnDelete.Text = "Sender entfernen (Entf)";
+            btnFTPSave.Text = "Speichern";
+            btnFTPCancel.Text = "Abbrechen";
+            //Tools
             TSMTools.Text = "Tools";
             TSMOpenBlacklistEditor.Text = "Öffne BlacklistEditor";
             TSMLoadBlacklist.Text = "Entferne die Sender von der Blacklist";
             TSMOthers.Text = "Sonstiges";
+            // TSMIP
+            // TSMRenameIPENDTOM3u8
+            TSMRenameIPEndToM3U8.Text = "IP von .ts zu .m3u8 umbenennen";
             //TSMDuplicate
             TSMDuplicate.Text = "Entferne Duplikate";
             MessageDuplicates = "Duplikate entfernt:";
             //  aiutoToolStripMenuItem.Text = "Hilfe";
             TSMLanguage.Text = "Sprache ändern";
-            TSMEng.Text = "Englisch";
-            TSMIta.Text = "Italienisch";
-            TSMGer.Text = "Deutsch";
             TSMEng.Enabled = true; TSMGer.Enabled = false; TSMIta.Enabled = true;
             //TSMSortby
             TSMSortby.Text = "Sortiere Sender";
@@ -1437,7 +1879,9 @@ namespace IPTVEdit
             LogoLoadOK = "Das Verzeichnis wurde geändert"; LogoLoadError = "Fehler";
             //TSMEPG
             TSMEpgCheckSimpleIPTV.Text = "Sender für Simple IPTV umbenennen";
-            TSMLoadEPG.Text = "EPG laden";
+            TSMOpenEPG.Text = "Öffne EPG-Datei";
+            TSMOpenEPGFromFile.Text = "Öffne EPG vom Computer";
+            TSMOpenEPGFromInternet.Text = "Öffne EPG vom Internet";
             //TSMUPDATE
             TSMCheckUpdate.Text = "Nach Updates prüfen";
             //
@@ -1472,28 +1916,36 @@ namespace IPTVEdit
         private void languageITA()
         {
             SafeWarning = "Siete sicuri di volere proseguire senza salvare ?";
-            SafeQuestionEPG = "Vuoi memorizzarti questa scelta per ogni riavvio del programma?";
+            SafeQuestion = "Vuoi memorizzarti questa scelta per ogni riavvio del programma?";
             SafeQuestionLogo = "Vuoi memorizzarti questa scelta per ogni riavvio del programma?";
             // File (ToolStripMenu)
             TSMFile.Text = "File";
             TSMNew.Text = "Crea nuova file";
-            TSMOpen.Text = "Aggiungi file (.m3u)";
-            TSMAddCode.Text = "Aggiungi canali via M3U-Code";
+            TSMOpenM3U.Text = "Aggiungi file (.m3u)";
+            TSMM3UfromFile.Text = "Apri un file .M3U";
+            TSMM3UfromURL.Text = "Scarica un file .M3U";
+            TSMM3UfromCode.Text = "Aggiungi canali via M3U-Code";
+            TSMFTPConfig.Text = "Configurazione FTP";
+            TSMFTPUpload.Text = "Carica e salva lista M3U su FTP-Server";
             TSMSave.Text = "Salva file...";
+            //
             btnAddChannel.Text = "Aggiungi canale";
             btnDelete.Text = "Cancella canale (Del)";
+            btnFTPSave.Text = "Salva";
+            btnFTPCancel.Text = "Chiudi";
+            //Tools
             TSMTools.Text = "Tools";
             TSMOpenBlacklistEditor.Text = "Apri BlacklistEditor";
             TSMLoadBlacklist.Text = "Cancella i canali dalla Blacklist";
             TSMOthers.Text = "Altro";
+            // TSMIP
+            // TSMRenameIPENDTOM3u8
+            TSMRenameIPEndToM3U8.Text = "Rinomina l'IP da .ts in .m3u8";
             //File - TSMDuplicate
             TSMDuplicate.Text = "Elimina duplicati";
             MessageDuplicates = "Duplicati eliminati:";
             //    aiutoToolStripMenuItem.Text = "Aiuto";
             TSMLanguage.Text = "Cambia lingua";
-            TSMEng.Text = "Inglese";
-            TSMIta.Text = "Italiano";
-            TSMGer.Text = "Tedesco";
             //TSMSort
             TSMSortby.Text = "Ordina canali...";
             TSMSortbyFile.Text = "Ordina elenco da un altro file .m3u";
@@ -1506,7 +1958,9 @@ namespace IPTVEdit
             LogoLoadOK = "L'elenco é stato cambiato"; LogoLoadError = "Errore";
             //TSMEPG
             TSMEpgCheckSimpleIPTV.Text = "Rinomina EPG per Simple IPTV";
-            TSMLoadEPG.Text = "Carica EPG";
+            TSMOpenEPG.Text = "Apri un EPG-File";
+            TSMOpenEPGFromFile.Text = "Apri EPG dal Computer";
+            TSMOpenEPGFromInternet.Text = "Apri EPG dall'Internet";
             //TSMUPDATE
             TSMCheckUpdate.Text = "Cerca aggiornamenti";
             //
@@ -1542,30 +1996,37 @@ namespace IPTVEdit
         private void languageENG()
         {
             SafeWarning = "Are you sure to proceed without saving ?";
-            SafeQuestionEPG = "Do you want to save this decision for the next startups?";
+            SafeQuestion = "Do you want to save this decision for the next startups?";
             SafeQuestionLogo = "Do you want to save this decision for the next startups?";
 
             // File (ToolStripMenu)
             TSMFile.Text = "File";
             TSMNew.Text = "Create new File";
-            TSMOpen.Text = "Open M3U-file";
-            TSMAddCode.Text = "Add channels with M3U-Code";
+            TSMOpenM3U.Text = "Open M3U-file";
+            TSMM3UfromFile.Text = "Open from file";
+            TSMM3UfromURL.Text = "Download from URL";
+            TSMM3UfromCode.Text = "Add channels with M3U-Code";
+            TSMFTPConfig.Text = "FTP-Settings";
+            TSMFTPUpload.Text = "Upload and save M3U-List on FTP-Server";
             TSMSave.Text = "Save file...";
             //
             btnAddChannel.Text = "Add channel";
             btnDelete.Text = "Delete channel (Del)";
+            btnFTPSave.Text = "Save";
+            btnFTPCancel.Text = "Cancel";
+            //Tools
             TSMTools.Text = "Tools";
             TSMOpenBlacklistEditor.Text = "Open BlacklistEditor";
             TSMLoadBlacklist.Text = "Delete channels from Blacklist";
             TSMOthers.Text = "Others";
+            // TSMIP
+            // TSMRenameIPENDTOM3u8
+            TSMRenameIPEndToM3U8.Text = "Rename IP from .ts to .m3u8";
             //TSMDuplicates
             TSMDuplicate.Text = "Delete duplicates";
             MessageDuplicates = "Duplicates deleted:";
             //   aiutoToolStripMenuItem.Text = "Help";
             TSMLanguage.Text = "Change language";
-            TSMEng.Text = "English";
-            TSMIta.Text = "Italian";
-            TSMGer.Text = "German";
             // TSMSortby
             TSMSortbyFile.Text = "Sort channel by another M3U-file";
             TSMSortby.Text = "Sort channels";
@@ -1578,7 +2039,9 @@ namespace IPTVEdit
             LogoLoadOK = "Directory changed"; LogoLoadError = "Error";
             //TSMEPG
             TSMEpgCheckSimpleIPTV.Text = "Change Epg-Names for Simple IPTV";
-            TSMLoadEPG.Text = "Load EPG";
+            TSMOpenEPG.Text = "Open EPG-File";
+            TSMOpenEPGFromFile.Text = "Open EPG from Computer";
+            TSMOpenEPGFromInternet.Text = "Open EPG from the Internet";
             //TSMUPDATE
             TSMCheckUpdate.Text = "Check for Update";
             //
